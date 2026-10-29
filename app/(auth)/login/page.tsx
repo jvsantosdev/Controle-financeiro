@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -120,5 +120,19 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-12 text-center text-sm text-slate-400 animate-pulse">
+          Carregando...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
