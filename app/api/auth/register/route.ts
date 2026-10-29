@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser } from '@/lib/auth';
+import { createUser, getUserByEmail } from '@/lib/auth';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -23,8 +23,16 @@ export async function POST(request: Request) {
     const { email, password, name } = validated.data;
 
     // Check if user already exists
-    const existingUser = await createUser({ email, password, name });
-    if (!existingUser) {
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Email já está em uso' },
+        { status: 400 }
+      );
+    }
+
+    const newUser = await createUser({ email, password, name });
+    if (!newUser) {
       return NextResponse.json(
         { error: 'Erro ao criar usuário' },
         { status: 500 }
@@ -44,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
     );
   }
