@@ -1,0 +1,93 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // hashed
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  paymentMethods PaymentMethod[]
+  budgets Budget[]
+  goals Goal[]
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  CASH
+  OTHER
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        PaymentMethodType
+  name        String
+  lastFourDigits String?
+  closingDay  Int?     // for credit cards
+  dueDay      Int?     // for credit cards
+  createdAt   DateTime @default(now())
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  description     String
+  amount          Int      // in cents
+  date            DateTime
+  category        String
+  type            TransactionType // INCOME, EXPENSE
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  status          TransactionStatus // PAID, PENDING
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PAID
+  PENDING
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  category  String
+  limit     Int      // in cents
+  month     DateTime // first day of month
+  createdAt DateTime @default(now())
+}
+
+model Goal {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  name          String
+  targetAmount  Int      // in cents
+  currentAmount Int      @default(0)
+  deadline      DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
