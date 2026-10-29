@@ -24,7 +24,7 @@ export default function LatestTransactionsWidget() {
       try {
         setLoading(true);
         const response = await fetch('/api/transactions/latest');
-        if (!response.ok) throw new Error('Failed to fetch latest transactions');
+        if (!response.ok) throw new Error('Falha ao buscar transações recentes');
         const data = await response.json();
         setTransactions(data);
         setError(null);
@@ -40,9 +40,12 @@ export default function LatestTransactionsWidget() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+      <div className="space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="h-16 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse"
+          />
         ))}
       </div>
     );
@@ -50,53 +53,89 @@ export default function LatestTransactionsWidget() {
 
   if (error) {
     return (
-      <p className="text-gray-500 text-center py-8">
-        Erro ao carregar transações: {error}
-      </p>
+      <div className="p-4 text-center text-xs text-rose-600 dark:text-rose-400">
+        Não foi possível carregar os lançamentos: {error}
+      </div>
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <p className="text-gray-500 text-center py-8">
-        Nenhuma transação cadastrada.
-      </p>
+      <div className="text-center py-10">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Nenhuma transação recente encontrada.
+        </p>
+        <Link
+          href="/transactions/new"
+          className="inline-block mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+        >
+          + Adicionar primeiro lançamento
+        </Link>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {transactions.map((transaction) => (
-        <div key={transaction.id} className="p-4 border-b hover:bg-gray-50 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h4 className="font-medium">{transaction.description}</h4>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm text-gray-500">{transaction.category}</span>
-                {transaction.status === 'PENDING' && (
-                  <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                    Pendente
+    <div className="space-y-2.5">
+      {transactions.map((transaction) => {
+        const isIncome = transaction.type === 'INCOME';
+        return (
+          <div
+            key={transaction.id}
+            className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700 transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${
+                  isIncome
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {isIncome ? '↓' : '↑'}
+              </div>
+
+              <div>
+                <p className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[160px] sm:max-w-xs">
+                  {transaction.description}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                    {transaction.category}
                   </span>
-                )}
+                  {transaction.status === 'PENDING' && (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
+                      Pendente
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
             <div className="text-right">
-              <p className={`font-bold ${
-                transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {transaction.type === 'INCOME' ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
+              <p
+                className={`font-bold text-sm tracking-tight ${
+                  isIncome
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {isIncome ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
               </p>
-              <p className="text-sm text-gray-500">{formatDatePtBR(transaction.date)}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                {formatDatePtBR(transaction.date)}
+              </p>
             </div>
           </div>
-        </div>
-      ))}
-      <div className="mt-6 text-center">
+        );
+      })}
+
+      <div className="pt-2 text-center">
         <Link
           href="/transactions"
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          Ver todas as transações →
+          Ver histórico completo de transações
         </Link>
       </div>
     </div>

@@ -10,59 +10,75 @@ interface GoalFormProps {
     currentAmount: number;
     deadline: string;
   };
-  onSubmit: (data: { name: string; targetAmount: number; currentAmount: number; deadline: string }) => Promise<void>;
+  onSubmit: (data: {
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline: string;
+  }) => Promise<void>;
   onCancel: () => void;
   isEditing?: boolean;
 }
 
-export default function GoalForm({ initialData, onSubmit, onCancel, isEditing = false }: GoalFormProps) {
+export default function GoalForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isEditing = false,
+}: GoalFormProps) {
   const [name, setName] = useState(initialData?.name || '');
   const [targetAmount, setTargetAmount] = useState(
-    initialData?.targetAmount ? formatCurrency(initialData.targetAmount).replace('R$', '').trim() : ''
+    initialData?.targetAmount
+      ? formatCurrency(initialData.targetAmount).replace('R$', '').trim()
+      : ''
   );
   const [currentAmount, setCurrentAmount] = useState(
-    initialData?.currentAmount ? formatCurrency(initialData.currentAmount).replace('R$', '').trim() : ''
+    initialData?.currentAmount
+      ? formatCurrency(initialData.currentAmount).replace('R$', '').trim()
+      : ''
   );
   const [deadline, setDeadline] = useState(
-    initialData?.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : ''
+    initialData?.deadline
+      ? new Date(initialData.deadline).toISOString().split('T')[0]
+      : ''
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!name.trim()) {
-      setError('Digite um nome para a meta');
+      setError('Informe um nome para a meta.');
       return;
     }
-    
+
     const targetInCents = parseCurrencyToCents(targetAmount);
     if (!targetAmount || isNaN(targetInCents) || targetInCents <= 0) {
-      setError('Insira um valor alvo válido');
+      setError('Insira um valor alvo válido.');
       return;
     }
-    
+
     if (!deadline) {
-      setError('Selecione uma data limite');
+      setError('Selecione uma data limite.');
       return;
     }
-    
+
     const currentInCents = currentAmount ? parseCurrencyToCents(currentAmount) : 0;
     if (currentAmount && isNaN(currentInCents)) {
-      setError('Valor atual inválido');
+      setError('Valor atual inválido.');
       return;
     }
-    
+
     if (currentInCents > targetInCents) {
-      setError('O valor atual não pode ser maior que o valor alvo');
+      setError('O valor atual não pode ultrapassar o valor alvo.');
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       await onSubmit({
         name,
         targetAmount: targetInCents,
@@ -75,95 +91,96 @@ export default function GoalForm({ initialData, onSubmit, onCancel, isEditing = 
       setLoading(false);
     }
   };
-  
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+        <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300 rounded-xl text-xs">
           {error}
         </div>
       )}
-      
+
       <div>
-        <label className="block text-sm font-medium mb-2">
-          Nome da meta *
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+          Nome da Meta *
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ex: Viagem para Europa, Nova moto, Reserva de emergência"
-          className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Ex: Reserva de emergência, Viagem de férias"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
           required
         />
       </div>
-      
-      <div className="grid grid-cols-2 gap-4">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Valor alvo (R$) *
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            Valor Alvo (R$) *
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-3 text-gray-500">R$</span>
+            <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm font-semibold">
+              R$
+            </span>
             <input
               type="text"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
               placeholder="0,00"
-              className="w-full pl-10 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
               required
             />
           </div>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Valor atual (R$)
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            Valor já acumulado (R$)
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-3 text-gray-500">R$</span>
+            <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm font-semibold">
+              R$
+            </span>
             <input
               type="text"
               value={currentAmount}
               onChange={(e) => setCurrentAmount(e.target.value)}
               placeholder="0,00"
-              className="w-full pl-10 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
             />
           </div>
         </div>
       </div>
-      
+
       <div>
-        <label className="block text-sm font-medium mb-2">
-          Data limite *
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+          Prazo limite *
         </label>
         <input
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
           min={new Date().toISOString().split('T')[0]}
-          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
           required
         />
-        <p className="text-sm text-gray-500 mt-1">
-          Data até quando você quer atingir essa meta
-        </p>
       </div>
-      
-      <div className="flex gap-4 pt-4">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Salvando...' : isEditing ? 'Atualizar meta' : 'Criar meta'}
-        </button>
+
+      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300"
+          className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-xs font-semibold transition-colors"
         >
           Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-semibold shadow-sm shadow-emerald-500/20 transition-all disabled:opacity-50"
+        >
+          {loading ? 'Salvando...' : isEditing ? 'Atualizar meta' : 'Criar meta'}
         </button>
       </div>
     </form>

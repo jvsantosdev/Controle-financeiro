@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import AppShell from '@/components/layout/AppShell';
 
 export default function CardsPage() {
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -21,8 +21,8 @@ export default function CardsPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/payment-methods');
-      if (!response.ok) throw new Error('Failed to fetch payment methods');
-      
+      if (!response.ok) throw new Error('Falha ao carregar métodos de pagamento');
+
       const data = await response.json();
       setPaymentMethods(data);
       setError(null);
@@ -39,33 +39,33 @@ export default function CardsPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const payload = {
         ...formData,
         closingDay: formData.closingDay ? parseInt(formData.closingDay) : undefined,
         dueDay: formData.dueDay ? parseInt(formData.dueDay) : undefined,
       };
-      
+
       const url = editingId ? `/api/payment-methods/${editingId}` : '/api/payment-methods';
       const method = editingId ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Erro ao salvar');
       }
-      
+
       setShowForm(false);
       setEditingId(null);
       setFormData({
@@ -75,7 +75,7 @@ export default function CardsPage() {
         closingDay: '',
         dueDay: '',
       });
-      
+
       fetchPaymentMethods();
     } catch (err: any) {
       alert('Erro: ' + err.message);
@@ -96,14 +96,14 @@ export default function CardsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este método de pagamento?')) return;
-    
+
     try {
       const response = await fetch(`/api/payment-methods/${id}`, {
         method: 'DELETE',
       });
-      
-      if (!response.ok) throw new Error('Failed to delete');
-      
+
+      if (!response.ok) throw new Error('Falha ao excluir');
+
       fetchPaymentMethods();
     } catch (err: any) {
       alert('Erro ao excluir: ' + err.message);
@@ -119,34 +119,64 @@ export default function CardsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <AppShell>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Métodos de Pagamento</h1>
-          <p className="text-gray-600">Gerencie seus cartões e outras formas de pagamento.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Cartões & Formas de Pagamento
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Controle datas de fechamento e vencimento para otimizar suas faturas.
+          </p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          onClick={() => {
+            setEditingId(null);
+            setFormData({
+              type: 'CREDIT_CARD',
+              name: '',
+              lastFourDigits: '',
+              closingDay: '',
+              dueDay: '',
+            });
+            setShowForm(true);
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-xl shadow-sm shadow-emerald-600/20 transition-all active:scale-[0.98]"
         >
-          Adicionar método
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Novo Cartão / Método</span>
         </button>
       </div>
 
+      {/* Form Drawer / Modal Area */}
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-bold mb-4">
-            {editingId ? 'Editar método' : 'Novo método de pagamento'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-lg mb-8 animate-fade-in">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100 dark:border-slate-800">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              {editingId ? 'Editar Método de Pagamento' : 'Novo Método de Pagamento'}
+            </h2>
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Tipo *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                  Tipo *
+                </label>
                 <select
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
                   required
                 >
                   <option value="CREDIT_CARD">Cartão de Crédito</option>
@@ -156,57 +186,65 @@ export default function CardsPage() {
                   <option value="OTHER">Outro</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium mb-1">Nome *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                  Nome ou Instituição *
+                </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Ex: Nubank, Itaú"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+                  placeholder="Ex: Nubank Ultravioleta, Inter Black"
                   required
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium mb-1">Últimos 4 dígitos</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                  Últimos 4 Dígitos
+                </label>
                 <input
                   type="text"
                   name="lastFourDigits"
                   value={formData.lastFourDigits}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="1234"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white font-mono"
+                  placeholder="4821"
                   maxLength={4}
                 />
               </div>
-              
+
               {formData.type === 'CREDIT_CARD' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Dia de fechamento</label>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                      Dia de Fechamento (1-31)
+                    </label>
                     <input
                       type="number"
                       name="closingDay"
                       value={formData.closingDay}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="1-31"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+                      placeholder="Ex: 10"
                       min="1"
                       max="31"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Dia de vencimento</label>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+                      Dia de Vencimento (1-31)
+                    </label>
                     <input
                       type="number"
                       name="dueDay"
                       value={formData.dueDay}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="1-31"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+                      placeholder="Ex: 17"
                       min="1"
                       max="31"
                     />
@@ -214,96 +252,119 @@ export default function CardsPage() {
                 </>
               )}
             </div>
-            
-            <div className="flex justify-end gap-4">
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingId(null);
-                  setFormData({
-                    type: 'CREDIT_CARD',
-                    name: '',
-                    lastFourDigits: '',
-                    closingDay: '',
-                    dueDay: '',
-                  });
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                onClick={() => setShowForm(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-sm transition-all"
               >
-                {editingId ? 'Atualizar' : 'Criar'}
+                {editingId ? 'Salvar Alterações' : 'Cadastrar Método'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Payment methods list */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Carregando...</div>
-        ) : error ? (
-          <div className="p-4 bg-red-50 text-red-700">{error}</div>
-        ) : paymentMethods.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            Nenhum método de pagamento cadastrado.
+      {/* Cards List Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 animate-pulse h-48"
+            />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="p-4 bg-rose-50 text-rose-700 rounded-xl text-sm mb-6">{error}</div>
+      ) : paymentMethods.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 p-16 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 text-2xl flex items-center justify-center mx-auto mb-3">
+            💳
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {paymentMethods.map((method: any) => (
-              <div key={method.id} className="p-6 hover:bg-gray-50">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <p className="text-base font-semibold text-slate-900 dark:text-white mb-1">
+            Nenhum método cadastrado
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto mb-6">
+            Adicione seus cartões de crédito, contas com PIX ou débito para vincular nas suas compras.
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-xs"
+          >
+            Adicionar primeiro método
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paymentMethods.map((method: any) => {
+            const isCredit = method.type === 'CREDIT_CARD';
+            return (
+              <div
+                key={method.id}
+                className={`p-6 rounded-2xl border transition-all relative overflow-hidden group shadow-xs ${
+                  isCredit
+                    ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-white border-slate-700/80'
+                    : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-white'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-8">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className={`px-3 py-1 rounded-md text-sm ${
-                        method.type === 'CREDIT_CARD' ? 'bg-purple-100 text-purple-800' :
-                        method.type === 'DEBIT_CARD' ? 'bg-blue-100 text-blue-800' :
-                        method.type === 'PIX' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {typeLabels[method.type as keyof typeof typeLabels]}
-                      </div>
-                      <h3 className="font-medium">{method.name}</h3>
-                      {method.lastFourDigits && (
-                        <span className="text-gray-600">•••• {method.lastFourDigits}</span>
-                      )}
-                    </div>
-                    
-                    {method.type === 'CREDIT_CARD' && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        {method.closingDay && `Fecha dia ${method.closingDay}`}
-                        {method.closingDay && method.dueDay && ' • '}
-                        {method.dueDay && `Vence dia ${method.dueDay}`}
-                      </div>
-                    )}
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-2 ${
+                        isCredit
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {typeLabels[method.type as keyof typeof typeLabels]}
+                    </span>
+                    <h3 className="text-lg font-bold tracking-tight">{method.name}</h3>
                   </div>
-                  
-                  <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                    <button
-                      onClick={() => handleEdit(method)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(method.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      Excluir
-                    </button>
+                  <div className="text-xl">
+                    {isCredit ? '💳' : method.type === 'PIX' ? '⚡' : '🏦'}
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between text-xs font-mono mb-4">
+                  <span className={isCredit ? 'text-slate-300' : 'text-slate-400 dark:text-slate-500'}>
+                    {method.lastFourDigits ? `•••• •••• •••• ${method.lastFourDigits}` : 'Sem número'}
+                  </span>
+                </div>
+
+                {isCredit && (method.closingDay || method.dueDay) && (
+                  <div className="pt-3 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-300">
+                    <span>Fecha dia: <strong>{method.closingDay || '—'}</strong></span>
+                    <span>Vence dia: <strong>{method.dueDay || '—'}</strong></span>
+                  </div>
+                )}
+
+                <div className={`flex justify-end gap-3 pt-3 mt-3 border-t text-xs ${isCredit ? 'border-slate-700/60' : 'border-slate-100 dark:border-slate-800'}`}>
+                  <button
+                    onClick={() => handleEdit(method)}
+                    className="font-medium text-emerald-500 hover:underline"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(method.id)}
+                    className="font-medium text-rose-500 hover:underline"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+            );
+          })}
+        </div>
+      )}
+    </AppShell>
   );
 }
